@@ -1,0 +1,354 @@
+Q1
+global class ExampleBatchClass implements Database.Batchable<sObject>{
+
+        global ExampleBatchClass(){
+                   // Batch Constructor
+        }
+       
+        // Start Method
+        global Database.QueryLocator start(Database.BatchableContext BC){
+			Date s = system.today()-10;
+			string query = 'select id  from Account where createDdate <:S';
+			return Database.getQueryLocator(query);
+        }
+      
+      // Execute Logic
+       global void execute(Database.BatchableContext BC, List<Account>scope){
+              if(scope.size>0)
+		delete scope;
+     
+       }
+     
+       global void finish(Database.BatchableContext BC){
+            // Logic to be Executed at finish
+       }
+    }
+
+
+
+DeleteAccounts---- nameof class
+................................................................................................................................................................................................
+
+Q7)
+List<CronTrigger> JOBIDLIST = new List<CronTrigger>();
+JOBIDLIST = [select id from CronTrigger];
+for(CronTrigger job:JOBIDLIST )
+{
+   System.abortJob(job.id);
+}
+...........................................................................................................................................................................................
+
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+
+1=)  global class batchClass1 implements Database.Batchable<sObject>{
+    global ExampleBatchClass(){
+        global Database.QueryLocator start(Database.BatchableContext BC){
+            Date s = system.today()-10;
+            string query = 'select id  from Account where createDdate <:S';
+            return Database.getQueryLocator(query);
+    }
+  global void execute(Database.BatchableContext BC, List<Account>scope){
+          if(scope.size>0)
+    delete scope;
+  }
+ global void finish(Database.BatchableContext BC){
+
+   }
+}
+
+
+
+global class batchClass1 implements Database.Batchable<sObject>{
+    global batchClass1(){
+    }
+
+    global Database.QueryLocator start(Database.BatchableContext BC){
+        return Database.getQueryLocator([
+            select Id
+            from Account
+            where CreatedDate = LAST_N_DAYS:10
+            ]);
+    }
+
+    global void execute(Database.BatchableContext BC, List<Account>scope){
+        delete scope;
+    }
+
+    global void finish(Database.BatchableContext BC){
+    }
+}
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+2=)  Format values===
+                      second:   ==     0 (this doesn't actually do anything)
+                      minute:   ==    0–59
+                      hour:          0-23
+                      day_of_month: == 1-31 - * ? / L W
+                      month:     ==    1-12 JAN-DEC , - * /
+                      day_of_week:  == 1-7 SUN-SAT , - * ? / L #
+                      optional_year: == null or 1970–2099 , - * / 
+
+
+Character   Description==
+
+,           Delimits values. Example: JAN, MAR, APR
+-           Specifies a range. Example: JAN-MAR
+*           Specifies all values
+?           Specifies no specific value
+/           Specifies increments. Example: Day_of_month = 1/5, the will run every fifth day of the month, starting on the first of the month.
+L           Specifies the end of a range (last). See docs for more details
+W           Specifies the nearest weekday of the given day. Example: 20W. If 20th is a Saturday, the class runs on the 19th
+#           Specifies the nth day of the month, in the format weekday#day_of_month. Example: 2#2 means the class runs on the second Monday of every month.
+
+
+2.global class DelAccBatch implements Database.Batchable<sObject>,Schedulable{
+    global Database.QueryLocator Start(Database.BatchableContext bc)
+    {
+       System.debug('Start');
+        Date d= system.today()-10;
+          return Database.getQueryLocator([Select Id,Name,CreatedDate from Account where CreatedDate<:d]);
+    }
+    
+    global void execute(Database.BatchableContext bc,List<Account> aclist)
+    {
+      if(aclist.size()>0)
+      {
+        System.debug('Aclist'+aclist);
+        delete aclist;
+      }
+    }
+     public void execute(SchedulableContext ctx)
+    {
+    DelAccBatch db=new DelAccBatch();
+Database.executeBatch(db);
+    }
+     
+    global void finish(Database.BatchableContext bc)
+    {
+        System.debug('Finished');
+    }
+
+
+}
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+4.public class delschDelAcc {
+    public static void delm()
+    {
+        try{
+         
+             CronTrigger cron=[Select Id from CronTrigger where CronJObDetail.Name='DelAcSch'];
+             System.abortJob(cron.Id);
+         
+        
+        }
+        catch(Exception e)
+        {
+            System.debug(e);
+        }
+    }
+
+}
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+
+5.global class CreatedailyOpp implements Database.Batchable<sObject>,Schedulable{
+
+    global Database.QueryLocator Start(Database.BatchableContext bc)
+    {
+        System.debug('Start');
+         return Database.getQueryLocator([Select Id from Opportunity Limit 2]);    
+   
+    }
+      global void execute(Database.BatchableContext bc,List<Opportunity> opp)
+    {
+        System.debug('executuion');
+        List<Opportunity> opptocreate=new List<Opportunity>();
+        for(Integer i=0;i<5;i++)
+        {
+            System.debug('executuion');
+            Date d=Date.today();
+            Opportunity op=new Opportunity(Name='Opp Batch'+i,CloseDate=d,StageName='Prospecting');
+            opptocreate.add(op);
+        }
+        insert opptocreate;
+    }
+    public void execute(SchedulableContext ctx)
+   {
+     CreatedailyOpp b1=new  CreatedailyOpp();
+	Database.executeBatch(b1);   
+    }
+     public void finish(Database.BatchableContext bc)
+    {
+        System.debug('Finished');
+    }
+
+    
+}
+
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+6.public class createdailyschedule {
+    public static void sch(){
+CreatedailyOpp j=new CreatedailyOpp();
+String sch='0 0 0/6 1/1  ? ';
+System.schedule('My job',sch,j);  
+    }
+
+}
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+7.public class DelCreatedDailySch {
+    public static void delm()
+    {
+        try{
+         
+             CronTrigger cron=[Select Id from CronTrigger where CronJObDetail.Name='My job'];
+             System.abortJob(cron.Id);
+         
+        
+        }
+        catch(Exception e)
+        {
+            System.debug(e);
+        }
+    }
+
+
+}
+
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+
+8.global class AcCountConBatch implements Database.Batchable<sObject>,Schedulable{
+
+    global Database.QueryLocator Start(Database.BatchableContext bc)
+
+    {
+        return Database.getQueryLocator([Select Id,AccountId From Contact where AccountId!=NUll LIMIT 2]);
+    }
+
+    global void execute(Database.BatchableContext bc,List<Contact> conlist)
+    {
+        System.debug('execute');
+        Set<Id> accid=new Set<Id>();
+      for(Contact con:conlist)
+      {
+             accid.add(con.AccountId);
+         
+      }
+        List<Account> aclist=[Select Id,count__c,(Select Id from Contacts) from Account Where Id In :accid];
+       
+        if(aclist!=null)
+        {
+            for(Account ac:aclist)
+            {
+                ac.count__c=ac.Contacts.size();
+                System.debug('ac.Contact.size '+ac.count__c);
+            }
+		}
+        if(aclist.size()!=0)
+        {
+            update aclist;
+		}
+      
+    }
+   public void execute(SchedulableContext ctx)
+    {
+     BatchBooking b1=new BatchBooking();
+	Database.executeBatch(b1);   
+   }
+   
+    global void finish(Database.BatchableContext bc)
+    {
+        AsyncApexJob a = [SELECT Id, Status, NumberOfErrors, JobItemsProcessed,TotalJobItems, CreatedBy.Email FROM AsyncApexJob WHERE Id =:BC.getJobId()];
+        System.debug('The batch Apex job processed ' + a.TotalJobItems +' batches with '+ a.NumberOfErrors + ' failures.');
+    }
+    
+}
+
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+
+11. public class forloopDel {
+     public static void delm()
+    {
+       
+         
+             List<CronTrigger> cron=[Select Id from CronTrigger];
+            for(CronTrigger ct: cron)
+            {
+             System.abortJob(ct.Id);
+            }
+         
+        
+        
+        
+    }
+
+
+}
+
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+
+12 global class  LeadBatch  implements Database.Batchable<sObject>,Schedulable{
+
+    global Database.QueryLocator Start(Database.BatchableContext bc)
+
+    {
+        Date d=system.today()-1;
+        return Database.getQueryLocator([Select Id,Phone,CreatedDate From Lead where CreatedDate=today And Phone=null]);
+    }
+
+    global void execute(Database.BatchableContext bc,List<Lead> leadlist)
+    {
+       System.debug('abc');
+      System.debug('Lead List'+leadlist);
+     List<User> userList = [SELECT Id,Email,IsActive FROM User WHERE Profile.Name = 'System Administrator' AND IsActive = True] ;
+        for(User u : userList)
+           {           
+               Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+               
+               String[] toAddresses = new String[] {u.Email};
+               mail.setToAddresses(toAddresses);
+               mail.setTargetObjectId(u.Id);
+               mail.setSubject('This is for Leadlist');
+               mail.setSaveAsActivity(false);
+               mail.setPlainTextBody
+               ('Lead List  ' +leadlist);
+               Messaging.sendEmail(new Messaging.SingleEmailMessage[] { mail });
+    }
+
+      
+    }
+   public void execute(SchedulableContext ctx)
+    {
+     LeadBatch b1=new LeadBatch();
+	Database.executeBatch(b1);   
+   }
+   
+    global void finish(Database.BatchableContext bc)
+    {
+        AsyncApexJob a = [SELECT Id, Status, NumberOfErrors, JobItemsProcessed,TotalJobItems, CreatedBy.Email FROM AsyncApexJob WHERE Id =:BC.getJobId()];
+        System.debug('The batch Apex job processed ' + a.TotalJobItems +' batches with '+ a.NumberOfErrors + ' failures.');
+         
+    }
+    
+}
+
+
+
+
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+
